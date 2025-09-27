@@ -38,6 +38,9 @@ public class Commands {
         add(new EnchantCommand());
         add(new FakePlayerCommand());
         add(new FriendsCommand());
+        add(new AltCommand());
+    add(new ScaryPeopleCommand());
+        add(new BlacklistedPeopleCommand());
         add(new CommandsCommand());
         add(new InventoryCommand());
         add(new NbtCommand());

@@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.systems.accounts.Accounts;
+import meteordevelopment.meteorclient.systems.alttracker.AltTracker;
 import meteordevelopment.meteorclient.systems.config.Config;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.hud.Hud;
@@ -47,6 +48,9 @@ public class Systems {
 
         add(new Macros());
         add(new Friends());
+        add(new meteordevelopment.meteorclient.systems.scarypeople.ScaryPeople());
+        add(new meteordevelopment.meteorclient.systems.blacklistedpeople.BlacklistedPeople());
+        add(new AltTracker());
         add(new Accounts());
         add(new Waypoints());
         add(new Profiles());

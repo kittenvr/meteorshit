@@ -6,11 +6,17 @@
 package meteordevelopment.meteorclient.systems.hud.elements;
 
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.systems.alttracker.AltTracker;
+import meteordevelopment.meteorclient.systems.blacklistedpeople.BlacklistedPeople;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.hud.*;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.render.BetterTab;
+import meteordevelopment.meteorclient.systems.scarypeople.ScaryPeople;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
+import meteordevelopment.meteorclient.utils.social.SocialColorUtils;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 
@@ -49,6 +55,48 @@ public class PlayerRadarHud extends HudElement {
         .name("display-friends")
         .description("Whether to show friends or not.")
         .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> showScaryPeople = sgGeneral.add(new BoolSetting.Builder()
+        .name("show-scary-people")
+        .description("Whether to show scary people in the radar.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> showBlacklistedPeople = sgGeneral.add(new BoolSetting.Builder()
+        .name("show-blacklisted-people")
+        .description("Whether to show blacklisted people in the radar.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> showAlts = sgGeneral.add(new BoolSetting.Builder()
+        .name("show-alts")
+        .description("Whether to show alt accounts in the radar.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> socialStatus = sgGeneral.add(new BoolSetting.Builder()
+        .name("social-status")
+        .description("Shows social status (Friend, Scary, etc.) next to player names.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> useBetterTabColors = sgGeneral.add(new BoolSetting.Builder()
+        .name("use-bettertab-colors")
+        .description("Use colors from BetterTab module instead of primary color.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> hideBasedOnSocialStatus = sgGeneral.add(new BoolSetting.Builder()
+        .name("filter-by-social-status")
+        .description("Only show players with special social status (friends, scary, blacklisted, etc.).")
+        .defaultValue(false)
         .build()
     );
 
@@ -151,10 +199,10 @@ public class PlayerRadarHud extends HudElement {
 
         for (PlayerEntity entity : getPlayers()) {
             if (entity.equals(mc.player)) continue;
-            if (!friends.get() && Friends.get().isFriend(entity)) continue;
+            if (!shouldShowPlayer(entity)) continue;
 
-            String text = entity.getName().getString();
-            if (distance.get()) text += String.format("(%sm)", Math.round(mc.getCameraEntity().distanceTo(entity)));
+            String text = getPlayerDisplayName(entity);
+            if (distance.get()) text += String.format(" (%sm)", Math.round(mc.getCameraEntity().distanceTo(entity)));
 
             width = Math.max(width, renderer.textWidth(text, shadow.get(), getScale()));
             height += renderer.textHeight(shadow.get(), getScale()) + 2;
@@ -178,25 +226,25 @@ public class PlayerRadarHud extends HudElement {
 
         for (PlayerEntity entity : getPlayers()) {
             if (entity.equals(mc.player)) continue;
-            if (!friends.get() && Friends.get().isFriend(entity)) continue;
+            if (!shouldShowPlayer(entity)) continue;
 
-            String text = entity.getName().getString();
-            Color color = PlayerUtils.getPlayerColor(entity, primaryColor.get());
+            String text = getPlayerDisplayName(entity);
+            Color color = getPlayerColor(entity);
             String distanceText = null;
 
             double width = renderer.textWidth(text, shadow.get(), getScale());
             if (distance.get()) width += spaceWidth;
 
             if (distance.get()) {
-                distanceText = String.format("(%sm)", Math.round(mc.getCameraEntity().distanceTo(entity)));
+                distanceText = String.format(" (%sm)", Math.round(mc.getCameraEntity().distanceTo(entity)));
                 width += renderer.textWidth(distanceText, shadow.get(), getScale());
             }
 
             double x = this.x + border.get() + alignX(width, alignment.get());
             y += renderer.textHeight(shadow.get(), getScale()) + 2;
 
-            x = renderer.text(text, x, y, color, shadow.get());
-            if (distance.get()) renderer.text(distanceText, x + spaceWidth, y, secondaryColor.get(), shadow.get(), getScale());
+            x = renderer.text(text, x, y, color, shadow.get(), getScale());
+            if (distance.get()) renderer.text(distanceText, x, y, secondaryColor.get(), shadow.get(), getScale());
         }
     }
 
@@ -211,5 +259,54 @@ public class PlayerRadarHud extends HudElement {
 
     private double getScale() {
         return customScale.get() ? scale.get() : Hud.get().getTextScale();
+    }
+
+    /**
+     * Determines whether a player should be shown in the radar based on current settings
+     */
+    private boolean shouldShowPlayer(PlayerEntity entity) {
+        String playerName = entity.getName().getString();
+        
+        // Check basic friend filter
+        if (!friends.get() && Friends.get().isFriend(entity)) return false;
+        
+        // Check specific social system filters
+        if (!showScaryPeople.get() && ScaryPeople.get().get(playerName) != null) return false;
+        if (!showBlacklistedPeople.get() && BlacklistedPeople.get().get(playerName) != null) return false;
+        if (!showAlts.get() && AltTracker.get().isTracked(playerName)) return false;
+        
+        // If filtering by social status, only show players with special status
+        if (hideBasedOnSocialStatus.get()) {
+            return SocialColorUtils.hasSpecialSocialStatus(entity);
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Gets the display name for a player, optionally including social status
+     */
+    private String getPlayerDisplayName(PlayerEntity entity) {
+        String name = entity.getName().getString();
+        
+        if (socialStatus.get()) {
+            String status = SocialColorUtils.getSocialStatus(entity);
+            if (!status.equals("Player")) {
+                name += " [" + status + "]";
+            }
+        }
+        
+        return name;
+    }
+    
+    /**
+     * Gets the appropriate color for a player based on settings
+     */
+    private Color getPlayerColor(PlayerEntity entity) {
+        if (useBetterTabColors.get()) {
+            return SocialColorUtils.getPlayerSocialColor(entity, primaryColor.get());
+        }
+        
+        return primaryColor.get();
     }
 }

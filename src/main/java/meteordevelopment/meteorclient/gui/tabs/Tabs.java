@@ -27,6 +27,7 @@ public class Tabs {
         add(new GuiTab());
         add(new HudTab());
         add(new FriendsTab());
+        add(new SocialTab());
         add(new MacrosTab());
         add(new ProfilesTab());
 
