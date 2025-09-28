@@ -8,7 +8,6 @@ package meteordevelopment.meteorclient.commands.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import meteordevelopment.meteorclient.commands.Command;
 import meteordevelopment.meteorclient.systems.alttracker.AltAccount;
@@ -17,8 +16,6 @@ import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.command.CommandSource;
-
-import java.util.concurrent.CompletableFuture;
 
 public class AltCommand extends Command {
     public AltCommand() {
@@ -31,7 +28,7 @@ public class AltCommand extends Command {
 
         // Link two players as alt accounts
         builder.then(literal("link")
-            .then(argument("player1", StringArgumentType.string())
+            .then(argument("main", StringArgumentType.string())
                 .suggests((CommandContext<CommandSource> context, SuggestionsBuilder suggestionsBuilder) -> {
                     if (client.player != null && client.world != null) {
                         String remaining = suggestionsBuilder.getRemaining().toLowerCase();
@@ -44,7 +41,7 @@ public class AltCommand extends Command {
                     }
                     return suggestionsBuilder.buildFuture();
                 })
-                .then(argument("player2", StringArgumentType.string())
+                .then(argument("alt", StringArgumentType.string())
                     .suggests((CommandContext<CommandSource> context, SuggestionsBuilder suggestionsBuilder) -> {
                         if (client.player != null && client.world != null) {
                             String remaining = suggestionsBuilder.getRemaining().toLowerCase();
@@ -58,8 +55,8 @@ public class AltCommand extends Command {
                         return suggestionsBuilder.buildFuture();
                     })
                     .executes(context -> {
-                        String player1 = StringArgumentType.getString(context, "player1");
-                        String player2 = StringArgumentType.getString(context, "player2");
+                        String player1 = StringArgumentType.getString(context, "main");
+                        String player2 = StringArgumentType.getString(context, "alt");
 
                         var tracker = AltTracker.get();
                         var group1 = tracker.getGroupByPlayer(player1);
