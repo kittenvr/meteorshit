@@ -51,6 +51,7 @@ public class MeteorClient implements ClientModInitializer {
     public static final String NAME;
     public static final Version VERSION;
     public static final String BUILD_NUMBER;
+    public static final String COMMIT;
 
     public static MeteorClient INSTANCE;
     public static MeteorAddon ADDON;
@@ -74,6 +75,7 @@ public class MeteorClient implements ClientModInitializer {
 
         VERSION = new Version(versionString);
         BUILD_NUMBER = MOD_META.getCustomValue(MeteorClient.MOD_ID + ":build_number").getAsString();
+        COMMIT = MOD_META.getCustomValue(MeteorClient.MOD_ID + ":commit").getAsString();
     }
 
     @Override

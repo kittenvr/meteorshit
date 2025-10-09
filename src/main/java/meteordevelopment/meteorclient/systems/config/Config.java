@@ -12,6 +12,7 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.System;
 import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -174,6 +175,7 @@ public class Config extends System<Config> {
         NbtCompound tag = new NbtCompound();
 
         tag.putString("version", MeteorClient.VERSION.toString());
+        tag.putString("commit", MeteorClient.COMMIT);
         tag.put("settings", settings.toTag());
         tag.put("dontShowAgainPrompts", listToTag(dontShowAgainPrompts));
 
@@ -182,6 +184,15 @@ public class Config extends System<Config> {
 
     @Override
     public Config fromTag(NbtCompound tag) {
+        // Notify once when the mod updates (compare stored commit to current)
+        String previousCommit = tag.getString("commit", "");
+        String currentCommit = MeteorClient.COMMIT;
+        if (!previousCommit.isEmpty() && !previousCommit.equals(currentCommit)) {
+            String prevShort = previousCommit.length() >= 7 ? previousCommit.substring(0, 7) : previousCommit;
+            String currShort = currentCommit.length() >= 7 ? currentCommit.substring(0, 7) : currentCommit;
+            ChatUtils.info("Updated to (highlight)%s(default) (was %s)", currShort, prevShort);
+        }
+
         if (tag.contains("settings")) settings.fromTag(tag.getCompoundOrEmpty("settings"));
         if (tag.contains("dontShowAgainPrompts")) dontShowAgainPrompts = listFromTag(tag, "dontShowAgainPrompts");
 
